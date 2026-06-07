@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="CoinWatch — a live cryptocurrency market dashboard with a personal watchlist."
+    />
+    <title>CoinWatch — Live Crypto Market Tracker</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Google Fonts: Space Grotesk (brand/headings), Inter (UI), Roboto Mono (numbers) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./css/style.css" />
+    <script type="module" src="./js/main.js"></script>
+  </head>
+  <body>
+    <!-- Header partial is injected here on load -->
+    <div id="main-header"></div>
+
+    <main class="container" id="main">
+      <section class="dashboard-intro">
+        <h1>Live Market</h1>
+        <p class="muted">
+          Top 25 coins by market cap, updated each time you load the page. Star a coin to add
+          it to your watchlist.
+        </p>
+      </section>
+
+      <section class="controls" aria-label="Dashboard controls">
+        <label class="search">
+          <span class="visually-hidden">Search coins</span>
+          <input
+            id="search-input"
+            type="search"
+            placeholder="Search by name or symbol…"
+            autocomplete="off"
+            aria-label="Search coins by name or symbol"
+          />
+        </label>
+      </section>
+
+      <!-- Status region: loading spinner / error / empty messages -->
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+
+      <!-- Coin cards are rendered into this grid -->
+      <section
+        id="coin-grid"
+        class="coin-grid"
+        aria-label="Cryptocurrency market list"
+      ></section>
+    </main>
+
+    <!-- Footer partial is injected here on load -->
+    <div id="main-footer"></div>
+  </body>
+</html>

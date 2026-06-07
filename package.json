@@ -1,0 +1,22 @@
+{
+  "name": "coinwatch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CoinWatch — a vanilla-JS cryptocurrency market tracker (WDD 330 final project).",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint \"src/**/*.{js,mjs}\"",
+    "format": "prettier --write \"src/**/*.{js,mjs,css,html}\""
+  },
+  "devDependencies": {
+    "eslint": "^9.15.0",
+    "@eslint/js": "^9.15.0",
+    "globals": "^15.12.0",
+    "prettier": "^3.3.3",
+    "vite": "^5.4.10"
+  }
+}
