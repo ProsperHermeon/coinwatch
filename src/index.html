@@ -46,6 +46,47 @@
             aria-label="Search coins by name or symbol"
           />
         </label>
+
+        <div class="control-row">
+          <div class="filter-group" role="group" aria-label="Filter coins">
+            <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">
+              All
+            </button>
+            <button type="button" class="filter-btn" data-filter="gainers" aria-pressed="false">
+              Gainers
+            </button>
+            <button type="button" class="filter-btn" data-filter="losers" aria-pressed="false">
+              Losers
+            </button>
+            <button
+              type="button"
+              class="filter-btn"
+              data-filter="watchlist"
+              aria-pressed="false"
+            >
+              Watchlist
+            </button>
+          </div>
+
+          <label class="select-field">
+            <span class="select-label">Sort by</span>
+            <select id="sort-select" aria-label="Sort coins">
+              <option value="market_cap">Market cap</option>
+              <option value="price">Price</option>
+              <option value="change_24h">24h change</option>
+              <option value="name">Name</option>
+            </select>
+          </label>
+
+          <label class="select-field">
+            <span class="select-label">Currency</span>
+            <select id="currency-select" aria-label="Display currency">
+              <option value="usd">USD</option>
+              <option value="eur">EUR</option>
+              <option value="gbp">GBP</option>
+            </select>
+          </label>
+        </div>
       </section>
 
       <!-- Status region: loading spinner / error / empty messages -->

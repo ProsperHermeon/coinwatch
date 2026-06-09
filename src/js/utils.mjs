@@ -29,19 +29,22 @@ export function setLocalStorage(key, value) {
 }
 
 /**
- * Format a USD price with reasonable precision:
- *  - >= $1     : 2 decimals
- *  - >= $0.01  : 4 decimals
+ * Format a price with reasonable precision and the given currency code:
+ *  - >= 1      : 2 decimals
+ *  - >= 0.01   : 4 decimals
  *  - smaller   : 6 decimals (for micro-cap coins)
+ *
+ * @param {number} value
+ * @param {string} [currency='usd']  ISO 4217 code (case-insensitive).
  */
-export function formatPrice(value) {
+export function formatPrice(value, currency = 'usd') {
   if (value == null || Number.isNaN(value)) return '—';
   let digits = 2;
   if (value < 1) digits = 4;
   if (value < 0.01) digits = 6;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: currency.toUpperCase(),
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(value);
@@ -55,17 +58,40 @@ export function formatPercent(value) {
 }
 
 /**
- * Compact dollar formatter for market cap / volume.
- * e.g. 1_234_000_000 → "$1.23B".
+ * Compact currency formatter for market cap / volume.
+ * e.g. 1_234_000_000 → "$1.23B" (or €1.23B, £1.23B).
+ *
+ * @param {number} value
+ * @param {string} [currency='usd']
  */
-export function formatCompact(value) {
+export function formatCompact(value, currency = 'usd') {
   if (value == null || Number.isNaN(value)) return '—';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency: currency.toUpperCase(),
     notation: 'compact',
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+/* ---- Currency preference (USD / EUR / GBP) ----------------------- */
+
+const CURRENCY_KEY = 'coinwatch-currency';
+const SUPPORTED_CURRENCIES = ['usd', 'eur', 'gbp'];
+
+/** Get the user's preferred fiat currency code (lowercased). */
+export function getCurrency() {
+  const stored = getLocalStorage(CURRENCY_KEY, 'usd');
+  const code = typeof stored === 'string' ? stored.toLowerCase() : 'usd';
+  return SUPPORTED_CURRENCIES.includes(code) ? code : 'usd';
+}
+
+/** Persist a new currency choice; ignores unsupported codes. */
+export function setCurrency(code) {
+  if (typeof code !== 'string') return;
+  const lower = code.toLowerCase();
+  if (!SUPPORTED_CURRENCIES.includes(lower)) return;
+  setLocalStorage(CURRENCY_KEY, lower);
 }
 
 /**

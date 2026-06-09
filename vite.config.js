@@ -13,6 +13,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'src/index.html'),
+        coin: resolve(__dirname, 'src/coin.html'),
       },
     },
   },

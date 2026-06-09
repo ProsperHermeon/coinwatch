@@ -77,3 +77,47 @@ export async function getMarkets({
   const url = `${COINGECKO_BASE}/coins/markets?${params.toString()}`;
   return getJson(url);
 }
+
+/**
+ * Fetch a single coin's full detail object (with market_data, description, etc).
+ *
+ * @param {string} id  CoinGecko coin id, e.g. "bitcoin".
+ * @param {object} [opts]
+ * @param {string} [opts.vsCurrency='usd']  Currency hint (the endpoint always
+ *   returns every currency in a dict; we keep the param for API symmetry).
+ */
+export async function getCoinDetail(id, { vsCurrency: _vsCurrency = 'usd' } = {}) {
+  if (!id) throw new Error('Missing coin id.');
+  const params = new URLSearchParams({
+    localization: 'false',
+    tickers: 'false',
+    market_data: 'true',
+    community_data: 'false',
+    developer_data: 'false',
+    sparkline: 'false',
+  });
+  const url = `${COINGECKO_BASE}/coins/${encodeURIComponent(id)}?${params.toString()}`;
+  return getJson(url);
+}
+
+/**
+ * Fetch market-chart price history for a coin.
+ * Returns the raw response: { prices, market_caps, total_volumes } where each
+ * is an array of [timestampMs, value] pairs.
+ *
+ * @param {string} id
+ * @param {object} [opts]
+ * @param {string} [opts.vsCurrency='usd']
+ * @param {number} [opts.days=30]  1, 7, 14, 30, 90, 180, 365 or 'max'.
+ */
+export async function getMarketChart(id, { vsCurrency = 'usd', days = 30 } = {}) {
+  if (!id) throw new Error('Missing coin id.');
+  const params = new URLSearchParams({
+    vs_currency: vsCurrency,
+    days: String(days),
+  });
+  const url = `${COINGECKO_BASE}/coins/${encodeURIComponent(
+    id,
+  )}/market_chart?${params.toString()}`;
+  return getJson(url);
+}

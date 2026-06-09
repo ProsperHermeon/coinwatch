@@ -1,6 +1,7 @@
 // CoinList.mjs
 // Renders coin cards into the DOM and handles per-card interactions
-// (star button toggle). Filtering is done by main.js, which calls render().
+// (star button toggle). main.js owns the view state and passes a
+// finished list to render() — this module does not filter or sort.
 
 import { formatCompact, formatPercent, formatPrice } from './utils.mjs';
 
@@ -9,46 +10,44 @@ export default class CoinList {
    * @param {HTMLElement} gridEl    Grid container that holds the cards.
    * @param {Watchlist}   watchlist Shared watchlist instance.
    * @param {Function}    onWatchlistChange Called after a star toggle (so main.js
-   *                                        can refresh the header count).
+   *                                        can refresh the header count + re-render).
+   * @param {string}      [currency='usd'] ISO currency code for money formatting.
    */
-  constructor(gridEl, watchlist, onWatchlistChange) {
+  constructor(gridEl, watchlist, onWatchlistChange, currency = 'usd') {
     this.gridEl = gridEl;
     this.watchlist = watchlist;
     this.onWatchlistChange = onWatchlistChange || (() => {});
-    this.coins = [];
+    this.currency = currency;
 
     // Event delegation: a single click handler for every star button.
     this.gridEl.addEventListener('click', (e) => this.#handleClick(e));
   }
 
-  /** Replace the in-memory dataset (called once after the fetch). */
-  setCoins(coins) {
-    this.coins = Array.isArray(coins) ? coins : [];
+  /** Update the currency used for money formatting on subsequent renders. */
+  setCurrency(code) {
+    this.currency = code || 'usd';
   }
 
   /**
-   * Render the coin cards. If a filter string is given, only coins whose
-   * name or symbol contains it are shown.
+   * Render the given list of coins. The list is rendered as-is —
+   * filtering / sorting is the caller's responsibility.
+   *
+   * @param {Array} coins
+   * @param {object} [opts]
+   * @param {string} [opts.emptyMessage]  Custom message when the list is empty.
    */
-  render(filter = '') {
-    const needle = filter.trim().toLowerCase();
-    const shown = needle
-      ? this.coins.filter(
-          (c) =>
-            (c.name && c.name.toLowerCase().includes(needle)) ||
-            (c.symbol && c.symbol.toLowerCase().includes(needle)),
-        )
-      : this.coins;
+  render(coins, { emptyMessage = 'No coins to display.' } = {}) {
+    const list = Array.isArray(coins) ? coins : [];
 
-    if (shown.length === 0) {
+    if (list.length === 0) {
       this.gridEl.innerHTML = `
-        <p class="muted" style="grid-column: 1 / -1; text-align: center;">
-          No coins match “${escapeHtml(filter)}”.
+        <p class="muted empty-msg">
+          ${escapeHtml(emptyMessage)}
         </p>`;
       return;
     }
 
-    this.gridEl.innerHTML = shown.map((coin) => this.#cardTemplate(coin)).join('');
+    this.gridEl.innerHTML = list.map((coin) => this.#cardTemplate(coin)).join('');
   }
 
   // ---- Private helpers ----------------------------------------------------
@@ -58,21 +57,28 @@ export default class CoinList {
     const isPositive = typeof change === 'number' ? change >= 0 : true;
     const changeClass = isPositive ? 'positive' : 'negative';
     const watched = this.watchlist.isWatched(coin.id);
+    const currency = this.currency;
 
     return `
       <article class="coin-card" data-coin-id="${escapeAttr(coin.id)}">
         <div class="coin-card-top">
-          <img
-            src="${escapeAttr(coin.image)}"
-            alt="${escapeAttr(coin.name)} logo"
-            width="36"
-            height="36"
-            loading="lazy"
-          />
-          <div class="coin-id">
-            <p class="coin-name">${escapeHtml(coin.name)}</p>
-            <span class="coin-symbol">${escapeHtml(coin.symbol)}</span>
-          </div>
+          <a
+            class="coin-link"
+            href="./coin.html?id=${encodeURIComponent(coin.id)}"
+            aria-label="Open detail page for ${escapeAttr(coin.name)}"
+          >
+            <img
+              src="${escapeAttr(coin.image)}"
+              alt="${escapeAttr(coin.name)} logo"
+              width="36"
+              height="36"
+              loading="lazy"
+            />
+            <span class="coin-id">
+              <span class="coin-name">${escapeHtml(coin.name)}</span>
+              <span class="coin-symbol">${escapeHtml(coin.symbol)}</span>
+            </span>
+          </a>
           <span class="coin-rank" aria-label="Market cap rank">#${
             coin.market_cap_rank ?? '—'
           }</span>
@@ -89,14 +95,14 @@ export default class CoinList {
           </button>
         </div>
 
-        <div class="coin-price">${formatPrice(coin.current_price)}</div>
+        <div class="coin-price">${formatPrice(coin.current_price, currency)}</div>
         <div class="coin-change ${changeClass}">${formatPercent(change)}</div>
 
         <dl class="coin-stats">
           <dt class="stat-label">Market cap</dt>
-          <dd class="stat-value">${formatCompact(coin.market_cap)}</dd>
+          <dd class="stat-value">${formatCompact(coin.market_cap, currency)}</dd>
           <dt class="stat-label">24h volume</dt>
-          <dd class="stat-value">${formatCompact(coin.total_volume)}</dd>
+          <dd class="stat-value">${formatCompact(coin.total_volume, currency)}</dd>
         </dl>
       </article>
     `;
@@ -105,6 +111,10 @@ export default class CoinList {
   #handleClick(e) {
     const btn = e.target.closest('button[data-action="toggle-watch"]');
     if (!btn) return;
+
+    // Defensive: clicking the star must not navigate or bubble to the card link.
+    e.preventDefault();
+    e.stopPropagation();
 
     const card = btn.closest('.coin-card');
     const coinId = card?.dataset.coinId;
@@ -117,17 +127,13 @@ export default class CoinList {
     btn.textContent = nowWatched ? '★' : '☆';
 
     // Update the aria-label as well so it stays accurate.
-    const coin = this.coins.find((c) => c.id === coinId);
-    if (coin) {
-      btn.setAttribute(
-        'aria-label',
-        `${nowWatched ? 'Remove' : 'Add'} ${coin.name} ${
-          nowWatched ? 'from' : 'to'
-        } watchlist`,
-      );
-    }
+    const name = card.querySelector('.coin-name')?.textContent || coinId;
+    btn.setAttribute(
+      'aria-label',
+      `${nowWatched ? 'Remove' : 'Add'} ${name} ${nowWatched ? 'from' : 'to'} watchlist`,
+    );
 
-    this.onWatchlistChange(this.watchlist.count());
+    this.onWatchlistChange(this.watchlist.count(), coinId, nowWatched);
   }
 }
 
@@ -146,4 +152,3 @@ function escapeAttr(s) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
-
